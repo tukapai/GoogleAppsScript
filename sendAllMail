@@ -1,0 +1,69 @@
+
+  /**
+ * メール一括送信処理の定義
+ */
+function sendMail() {
+  //------------- （１）宛先リストから処理対象の行数を取得 -----------------------
+  // スプレッドシート（MS Excelで言う所のブック）を取得
+  var book = SpreadsheetApp.getActiveSpreadsheet();
+
+  // 宛先リストシートを取得
+  var sheetAddressList = book.getSheetByName("MailList");
+
+  // データが入力されている範囲を取得
+  var datRange = sheetAddressList.getDataRange();
+
+  // 処理対象の行数を取得
+  var numRows = datRange.getNumRows();
+
+  //------------- （２）メール本文の情報を取得 -----------------------
+  // メール本文シートを取得
+  var sheetMailBody = book.getSheetByName("SendMail");
+
+  // メール件名を取得
+  var subject = sheetMailBody.getRange(2, 3).getValue();
+
+  // メール本文を取得
+  var body = sheetMailBody.getRange(4, 3).getValue();
+
+  // 処理を開始する行番号を取得
+  var start = sheetAddressList.getRange(1, 5).getValue();
+
+  //------------- （３）メール送信処理 -----------------------
+  for (var i = start;i <= numRows;i++) {
+
+    // 対象行の宛先を取得
+    var to = sheetAddressList.getRange(i, 2).getValue();
+
+    MailApp.sendEmail(to, subject, body);
+
+    // 処理を開始する行番号を設定（次回実行時には次の行から開始するようにする）
+    sheetAddressList.getRange(1, 5).setValue(i + 1);
+
+    // 配信状態を設定
+    sheetAddressList.getRange(i, 5).setValue("OK");
+  }
+
+  // 終了確認ダイアログを表示
+  Browser.msgBox("確認", "メール一斉送信が完了しました。", Browser.Buttons.OK);
+
+  // 処理を開始する行番号を初期化
+  sheetAddressList.getRange(1, 5).setValue(2);
+
+};
+
+/**
+ * スプレッドシート（MS Excelで言う所のブック）を開いた時に実行する処理。
+ * スプレッドシートを開いた際に、以下の処理（関数）が自動実行される。
+ * ここではコントロールメニューにスクリプト実行コマンドを追加している。
+ */
+function onOpen() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet();
+  var entries = [
+    {
+      name : "メール一斉送信",
+      functionName : "sendMail"
+    }
+  ];
+  sheet.addMenu("スクリプト実行", entries);
+};
